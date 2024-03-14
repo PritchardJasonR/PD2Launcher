@@ -1,13 +1,21 @@
 ﻿// the purpose of this function is to ensure that the database is properly initialized with the necessary default values 
 // for options and an empty lootfilters object, if they do not exist already.
 function initDb(storage) {
-  // Load saved options or use defaults
-  storage.root = {
-    options: {
-      skiptobnet: true,
-    },
-    lootfilters: {},
-  };
+  // Check and initialize the news cache and last fetched timestamp
+  if (!storage.root.newsCache) {
+    storage.root.newsCache = {
+      newsItems: [],
+      lastFetched: null
+    };
+  }
+
+  // Existing initialization logic
+  if (!storage.root.options) {
+    storage.root.options = { skiptobnet: true };
+  }
+  if (!storage.root.lootfilters) {
+    storage.root.lootfilters = {};
+  }
 
   return storage.root;
 }
@@ -518,11 +526,11 @@ function onLootFilterAuthorLoadComplete(author, filters){
 
 function formatDate(dateString) {
     // Assuming dateString is in ISO format: "YYYY-MM-DDTHH:MM:SSZ"
-    var parts = dateString.split('T')[0].split('-'); // Splits the date part and ignores time
+    var parts = dateString.split('T')[0].split('-');
     var year = parts[0];
     var month = parts[1];
     var day = parts[2];
-    return year + '-' + month + '-' + day; // Or any format you need
+    return year + '-' + month + '-' + day;
 }
 
 function updateNewsSection() {
@@ -535,7 +543,7 @@ stdout.printf("\n updateNewsSection start\n");
             populateNewsSection(data);
         },
         error: function(err) {
-            // Handle errors, possibly by showing a default message or cached news
+            stdout.printf("\n updateNewsSection error\n");
         }
     });
 	stdout.printf("\n updateNewsSection finish\n");
@@ -543,15 +551,16 @@ stdout.printf("\n updateNewsSection start\n");
 
 function populateNewsSection(newsItems) {
     stdout.printf("\n populateNewsSection start\n");
-    news.innerHTML = ''; // Clear existing news entries
+    news.innerHTML = '';
 
     for (var item of newsItems) {
         stdout.printf("\nAttempting to append news item: %s\n", item.title);
-        var formattedDate = formatDate(item.date); // Use the manual parsing function
+        var formattedDate = formatDate(item.date);
         news.$append(
             `<div class="entry">
-                <a class="title" href="${item.link}">${item.title}</a>
-                <div class="date">${formattedDate}</div>
+                <a class="title" href="{item.link}">{item.title}</a>
+				<span class="summary">{item.summary}</span>
+                <div class="date">{formattedDate}</div>
             </div>`
         );
     }
