@@ -66,6 +66,9 @@ event keydown (e) {
 self.ready = function() {
 	// connect to debugger
 	if( view.connectToInspector ) view.connectToInspector();
+	stdout.printf("\n news started\n");
+	updateNewsSection();
+	stdout.printf("\n news finished\n");
 
 	// positioning the window in the middle of the screen:
 	var (sx,sy,sw,sh) = view.screenBox(#workarea,#rectw); // getting screen/monitor size
@@ -511,6 +514,48 @@ function onLootFilterAuthorLoadComplete(author, filters){
 
 		lootFilterLoaded = true;
 	}
+}
+
+function formatDate(dateString) {
+    // Assuming dateString is in ISO format: "YYYY-MM-DDTHH:MM:SSZ"
+    var parts = dateString.split('T')[0].split('-'); // Splits the date part and ignores time
+    var year = parts[0];
+    var month = parts[1];
+    var day = parts[2];
+    return year + '-' + month + '-' + day; // Or any format you need
+}
+
+function updateNewsSection() {
+stdout.printf("\n updateNewsSection start\n");
+    view.request({
+        url: "https://raw.githubusercontent.com/PritchardJasonR/news/main/news.json",
+        protocol: #basic,
+        output: #json,
+        success: function(data) {
+            populateNewsSection(data);
+        },
+        error: function(err) {
+            // Handle errors, possibly by showing a default message or cached news
+        }
+    });
+	stdout.printf("\n updateNewsSection finish\n");
+}
+
+function populateNewsSection(newsItems) {
+    stdout.printf("\n populateNewsSection start\n");
+    news.innerHTML = ''; // Clear existing news entries
+
+    for (var item of newsItems) {
+        stdout.printf("\nAttempting to append news item: %s\n", item.title);
+        var formattedDate = formatDate(item.date); // Use the manual parsing function
+        news.$append(
+            `<div class="entry">
+                <a class="title" href="${item.link}">${item.title}</a>
+                <div class="date">${formattedDate}</div>
+            </div>`
+        );
+    }
+    stdout.printf("\n populateNewsSection finish\n");
 }
 
 function loadOptions() {
