@@ -5,7 +5,7 @@ function initDb(storage) {
   if (!storage.root.newsCache) {
     storage.root.newsCache = {
       newsItems: [],
-      lastFetched: null
+      eTag: null
     };
   }
 
@@ -74,9 +74,6 @@ event keydown (e) {
 self.ready = function() {
 	// connect to debugger
 	if( view.connectToInspector ) view.connectToInspector();
-	stdout.printf("\n news started\n");
-	updateNewsSection();
-	stdout.printf("\n news finished\n");
 
 	// positioning the window in the middle of the screen:
 	var (sx,sy,sw,sh) = view.screenBox(#workarea,#rectw); // getting screen/monitor size
@@ -87,6 +84,9 @@ self.ready = function() {
 	// Load saved options for checkbox's and radios
 	loadOptions();
 	stdout.printf("options loaded");
+    stdout.printf("\n news started\n");
+	updateNewsSection();
+	stdout.printf("\n news finished\n");
 }
 
 // function that is used by cpp for updating the
@@ -554,7 +554,7 @@ function populateNewsSection(newsItems) {
     news.innerHTML = '';
 
     for (var item of newsItems) {
-        stdout.printf("\nAttempting to append news item: %s\n", item.title);
+        stdout.printf("\nAttempting to append news item: %i\n", item.title);
         var formattedDate = formatDate(item.date);
         news.$append(
             `<div class="entry">
@@ -567,14 +567,32 @@ function populateNewsSection(newsItems) {
     stdout.printf("\n populateNewsSection finish\n");
 }
 
-function loadOptions() {
-  var options = storageRoot.options;
-  var hasRendererOption = false;
+function createNewsFallbackForExistingUsers(){
+	stdout.printf("\n in the news fallback finish\n");
+	stdout.printf("storageRoot.newsCache.newsItems: %s",storageRoot.newsCache.newsItems);
+	stdout.printf("storageRoot.newsCache.eTag: %s",storageRoot.newsCache.eTag);
+	if (!storage.root.newsCache.eTag) {
+	stdout.printf("\n creating news cache\n");
+    storage.root.newsCache = {
+      newsItems: [],
+      eTag: null
+    };
+  }
+  	stdout.printf("storageRoot.newsCache.newsItems: %s",storageRoot.newsCache.newsItems);
+	stdout.printf("storageRoot.newsCache.eTag: %s",storageRoot.newsCache.eTag);
+}
 
-  if (!("ddrawOptions" in storageRoot)) {
+function createFallbackDdrawsForExistingUsers(){
+ if (!("ddrawOptions" in storageRoot)) {
     storageRoot.ddrawOptions = createDdrawOptionsFallbackDefaults();
     stdout.printf("ddrawOptions have been created?:  %s \n", storageRoot.ddrawOptions);
   }
+}
+
+function loadOptions() {
+  var options = storageRoot.options;
+  var hasRendererOption = false;
+  createFallbackDdrawsForExistingUsers();
 
   for(var key in options) {
     var value = options[key];
